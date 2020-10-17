@@ -1,0 +1,182 @@
+import pandas as pd
+import numpy as np
+from sklearn.neural_network import MLPClassifier
+from sklearn.ensemble import GradientBoostingClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import cross_val_score
+import h5py
+import matplotlib.pyplot as plt
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.model_selection import train_test_split
+
+%%%DATA PREPARATION%%%
+
+#Data Loading – take each assembly solely and then make them a matrix
+"""
+training_set = np.zeros((100,1000),dtype='float64');
+nonint_1p = h5py.File('clusterdata_1000rea_20200318/npStruct_1p_nonint/spin_mc.h5','r')
+count = 0;
+ls = list(nonint_1p.keys())
+#print('List of datasets in this file:\n',ls)
+for item in nonint_1p.keys():
+    training_set[:,count] = nonint_1p.get(item)['mt'][:,1]
+    count+=1
+"""
+
+#Dataset setup
+ """
+r_DataSet =np.append(r_DataSet,r_ringXZ_7p,axis=0)
+r_labels = ["arkus_7p2" for i in range(1000)]
+r_Labels = np.append(r_Labels,r_labels,axis=0)
+"""
+
+#split for training set and testing set
+"""
+from sklearn.model_selection import train_test_split
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.10, random_state=0)
+"""
+
+%%%
+
+
+%%%DATA ANALYSIS%%%
+
+#correlation between two instances
+"""
+from scipy.stats import pearsonr
+co_pearson,_ = pearsonr(testset_Ychain_2p[2,:],Ychain_3p[0,:])
+
+from scipy.stats import spearmanr
+co_spearman,_ = spearmanr(testset_Ychain_2p[2,:], Ychain_3p [0,:])
+"""
+
+#Correlation with instances in the same assemblies
+"""
+A_spearman_coef_2 = np.zeros((100,100))
+from scipy.stats import spearmanr
+for i in range(100):
+    for j in range(100):
+        A_spearman_coef_2[i,j],_= spearmanr(testset_Ychain_2p[i,:],testset_ringXZ_6p[j,:])
+"""
+
+#Mean correlation values among different assemblies 
+"""
+TestSet_list = [testset_Ychain_2p,testset_ringXZ_6p,………].    #42 labels here
+A_spearman_coef = np.zeros((100,100))
+A_M_Coef = np.zeros((2,2))
+c1=0
+c2=0
+for x in TestSet_list:
+    for y in TestSet_list:
+        for i in range(100):
+            for j in range(100):
+                A_spearman_coef[i,j],_= spearmanr(x[i,:],y[j,:])   
+        A_M_Coef[c1,c2] = np.mean(A_spearman_coef[:,:])
+        A_spearman_coef = np.zeros((100,100))
+        c2=c2+1
+    c2=0
+    c1=c1+1
+
+"""
+
+%%%
+
+%%%MODELS SETUP%%%
+#Logistic Regression
+"""
+from sklearn.linear_model import LogisticRegression
+LR = LogisticRegression(random_state=0).fit(X_train, y_train)
+LR.score(X_test,t_test)
+LR_scores = cross_val_score(LR,X_test,y_test,cv=5)	 #5-fold cross validation
+"""
+
+#Decision Tree
+"""
+from sklearn.tree import DecisionTreeClassifier
+DT = DecisionTreeClassifier()
+DT.fit(X_train,y_train)
+DT.score(X_train,y_train)
+DT_scores = cross_val_score(DT,X_test,y_test,cv=5)	 #5-fold cross validation
+"""
+
+#Random Forest
+"""
+RF = RandomForestClassifier(n_estimators=100,max_depth=None,min_samples_split=2,random_state=0)
+RF.fit(X_train,y_train)
+RF.score(X_train,y_train)
+RF_scores = cross_val_score(RF, X_train,y_train,cv=5)  #5-fold cross validation
+"""
+
+#SVM
+"""
+from sklearn.svm import SVC
+SVM = SVC(decision_function_shape='ovr',C=1e11,gamma=1e-2)	 #C and gamma determine the performance of model	
+SVM.fit(X_train, y_train)
+SVM.score(X_test,y_test)
+SVM_scores = cross_val_score(SVM, X_train,y_train,cv=5)  #5-fold cross validation
+"""
+
+#Gradient Boosting Classifier
+"""
+GBC = GradientBoostingClassifier(random_state=0,n_estimators=5)
+GBC.fit(X_train,y_train)
+GBC.score(X_test,y_test)
+GBC_scores = cross_val_score(GBC, X_train,y_train,cv=5)  #5-fold cross validation
+
+"""
+
+#XGboost
+"""
+import xgboost as xgb
+XGB=xgb.XGBClassifier(random_state=1,learning_rate=0.01)
+XGB.fit(x_train, y_train)
+XGB.score(x_test,y_test)
+XGB_scores = cross_val_score(XGB, X_train,y_train,cv=5)  #5-fold cross validation
+"""
+# Random Forest with Logistic Regression - Supervised transformation based on random forests
+"""
+from sklearn.linear_model import LogisticRegression
+X_train_rf,X_train_lr,y_train_rf,y_train_lr = train_test_split(X_train,y_train,test_size=0.5)
+clf_RF = RandomForestClassifier(n_estimators=100,max_depth=None,min_samples_split=2,random_state=0)
+clf_RF.fit(X_train_rf,y_train_rf)
+rf_enc = OneHotEncoder()
+rf_lm = LogisticRegression(max_iter=1000)
+rf_enc.fit(clf_RF.apply(X_train_rf))        #coding: y_predict
+rf_lm.fit(rf_enc.transform(clf_RF.apply(X_train_lr)),y_train_lr)  #y_predict & y
+rf_lm.score((rf_enc.transform(clf_RF.apply(X_test)))[:,:],y_test)
+rf_lm.predict(rf_enc.transform(clf_RF.apply(X_test)))[6]     #predict a curve
+"""
+
+# Gradient Boosting Tree - Supervised transformation based on gradient boosting tree
+"""
+grd = GradientBoostingClassifier(n_estimators=100,max_features=7,max_depth=8)
+grd_enc = OneHotEncoder()
+grd_lm = LogisticRegression(max_iter=1000)
+grd.fit(X_train_grd, y_train_grd)
+grd_enc.fit(grd.apply(X_train_grd)[:, :, 0])
+grd_leaf = grd.apply(X_train_lr)[:, :, 0]
+grd_lm.fit(grd_enc.transform(grd_leaf), y_train_lr)
+grd_lm.score(grd_enc.transform(grd.apply(X_train)[:, :, 0]), y_train)
+"""
+
+#Judge the prediction using label
+"""
+%%%  y_predict - y
+error_lm = np.ones(4200)
+for i in range(4200):
+    if rf_lm.predict(rf_enc.transform(clf_RF.apply(X_test)))[i] == y_test[i]:
+        error_lm[i]=0
+    else:
+        error_lm[i]=1 
+%%%
+"""
+
+#Label the misclassified assemblies with ‘0’
+"""
+mist_RFLR = y_test
+for i in range(4200):
+    if error_RFLR[i]==1:
+        mist_RFLR[i]=y_test[i]
+    else:
+        mist_RFLR[i]=0
+"""
