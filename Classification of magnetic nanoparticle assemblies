@@ -133,6 +133,7 @@ XGB.fit(x_train, y_train)
 XGB.score(x_test,y_test)
 XGB_scores = cross_val_score(XGB, X_train,y_train,cv=5)  #5-fold cross validation
 """
+
 # Random Forest with Logistic Regression - Supervised transformation based on random forests
 """
 from sklearn.linear_model import LogisticRegression
