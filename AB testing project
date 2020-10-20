@@ -1,0 +1,91 @@
+/*
+Use the final_assignments table to calculate the view binary,
+and average views for the 30 day window after the test assignment for item_test_2. 
+(You may include the day the test started) 
+*/
+
+/* %%%%%%%%% item_view response
+
+SELECT
+
+ --  test_number 
+ -- ,test_assignment
+ -- ,item_id
+ -- ,view_binary_30d
+   test_number 
+  ,test_assignment
+  ,SUM(view_binary_30d) AS n_views_30d
+  ,COUNT(item)       AS n_items
+FROM 
+(SELECT view_item_events.item_id AS item
+       ,test_number
+       ,test_assignment
+       ,test_start_date
+       ,MAX(CASE WHEN event_time>test_start_date AND DATE_PART('day',event_time-test_start_date)<=30 
+        THEN 1 ELSE 0 END) view_binary_30d
+  FROM dsv1069.final_assignments 
+  LEFT JOIN dsv1069.view_item_events 
+  --( 
+--  SELECT (CASE WHEN parameter_name='item_id' THEN CAST(parameter_value AS numeric) ELSE NULL END) AS item_id
+--        ,event_time
+--  FROM dsv1069.events
+--  WHERE event_name='view_item'
+  
+  --) --AS view_item
+  ON final_assignments.item_id = view_item_events.item_id
+  WHERE test_number='item_test_2'
+  GROUP BY view_item_events.item_id 
+          ,test_number
+          ,test_assignment
+--        ,event_time   //do not include elements irrelevant
+          ,test_start_date
+) view_item_2
+GROUP BY test_number 
+        ,test_assignment
+LIMIT 100
+
+*/
+
+/*
+Use the final_assignments table to calculate the order binary for the 30 day 
+window after the test assignment for item_test_2 (You may include the day the test started)
+*/
+
+
+
+/* %%%%%%%% order placed response
+
+SELECT
+   test_assignment
+  ,SUM(order_binary_30d)   AS n_order_binary
+  ,COUNT(DISTINCT item_id) AS n_order
+FROM
+(SELECT 
+   item_test_2_order.item_id
+  ,item_test_2_order.test_assignment
+  ,item_test_2_order.test_number
+  ,item_test_2_order.test_start_date
+  ,item_test_2_order.created_at
+  ,MAX(CASE WHEN (created_at > test_start_date AND 
+    DATE_PART('day',created_at - test_start_date) <= 30) THEN 1 ELSE 0 END) AS order_binary_30d  
+ FROM
+  (SELECT final_assignments.item_id
+         ,test_assignment
+         ,test_number
+         ,test_start_date
+         ,DATE(orders.created_at) AS created_at  --having DATE() leads to a different result
+   FROM dsv1069.final_assignments
+   LEFT JOIN dsv1069.orders 
+   ON final_assignments.item_id = orders.item_id
+   WHERE test_number='item_test_2'
+  ) item_test_2_order
+   GROUP BY item_test_2_order.item_id
+      ,item_test_2_order.test_assignment
+      ,item_test_2_order.test_number
+      ,item_test_2_order.test_start_date
+      ,item_test_2_order.created_at
+) order_binary
+GROUP BY 
+  test_assignment
+
+*/
